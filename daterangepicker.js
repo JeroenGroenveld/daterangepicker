@@ -40,6 +40,7 @@
         this.maxDate = false;
         this.maxSpan = false;
         this.autoApply = false;
+        this.doubleCalendarDesktop = false;
         this.singleDatePicker = false;
         this.singleCalendar = false;
         this.showDropdowns = false;
@@ -243,6 +244,9 @@
         if (typeof options.showCustomRangeLabel === 'boolean')
             this.showCustomRangeLabel = options.showCustomRangeLabel;
 
+        if (typeof options.doubleCalendarDesktop === 'boolean')
+            this.doubleCalendarDesktop = options.doubleCalendarDesktop;
+
         if (typeof options.singleDatePicker === 'boolean') {
             this.singleDatePicker = options.singleDatePicker;
             if (this.singleDatePicker)
@@ -386,10 +390,16 @@
             this.container.addClass('show-ranges');
 
         if (this.singleDatePicker || this.singleCalendar) {
-            this.container.addClass('single');
-            this.container.find('.drp-calendar.left').addClass('single');
+            if(this.doubleCalendarDesktop) {
+                if($(window).width() < 768) {
+                    this.container.addClass('single');
+                    this.container.find('.drp-calendar.left').addClass('single');
+                    this.container.find('.drp-calendar.right').hide();
+                } else {
+                    this.container.find('.drp-calendar.right').show();
+                }
+            }
             this.container.find('.drp-calendar.left').show();
-            this.container.find('.drp-calendar.right').hide();
             if (!this.timePicker) {
                 this.container.addClass('auto-apply');
             }
@@ -738,7 +748,8 @@
             }
 
             html += '<th colspan="5" class="month">' + dateHtml + '</th>';
-            if ((!maxDate || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker || this.singleCalendar)) {
+            var showNext = (this.doubleCalendarDesktop && side === 'left') ? (($(window).width() < 768) ? true : false) : true;
+            if ((!maxDate || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker || this.singleCalendar) && showNext) {
                 html += '<th class="next available"><span></span></th>';
             } else {
                 html += '<th></th>';

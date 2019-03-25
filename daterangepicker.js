@@ -1108,8 +1108,8 @@
             $(window).on('resize.daterangepicker', $.proxy(function(e) { this.move(e); }, this));
 
             this.oldStartDate = this.startDate.clone();
-            this.oldEndDate = this.endDate.clone();
-            this.previousRightTime = this.endDate.clone();
+            this.oldEndDate = (this.endDate == null ? null : this.endDate.clone());
+            this.previousRightTime = (this.endDate == null ? null : this.endDate.clone());
 
             this.updateView();
             this.container.show();
@@ -1123,12 +1123,12 @@
 
             //incomplete date selection, revert to last values
             if (!this.endDate) {
-                this.startDate = this.oldStartDate.clone();
-                this.endDate = this.oldEndDate.clone();
+                //this.startDate = this.oldStartDate.clone();
+                this.endDate = null;
             }
 
             //if a new date range was selected, invoke the user callback function
-            if (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate))
+            if (this.oldEndDate != null && this.endDate != null && (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate)))
                 this.callback(this.startDate.clone(), this.endDate.clone(), this.chosenLabel);
 
             //if picker is attached to a text input, update it

@@ -40,7 +40,7 @@
         this.maxDate = false;
         this.maxSpan = false;
         this.autoApply = false;
-        this.doubleCalendarDesktop = false;
+        this.showDays = false;
         this.singleDatePicker = false;
         this.singleCalendar = false;
         this.showDropdowns = false;
@@ -111,6 +111,11 @@
                     '<div class="calendar-table"></div>' +
                     '<div class="calendar-time"></div>' +
                 '</div>' +
+                '<div class="drp-footer">' +
+                    '<span class="from"></span>' +
+                    '<span class="to"></span>' +
+                    '<span class="days"></span>' +
+                '</div>' +
                 '<div class="drp-buttons">' +
                     '<span class="drp-selected"></span>' +
                     '<button class="cancelBtn" type="button"></button>' +
@@ -135,6 +140,12 @@
 
             if (typeof options.locale.separator === 'string')
                 this.locale.separator = options.locale.separator;
+
+            if (typeof options.locale.day === 'string')
+                this.locale.day = options.locale.day;
+
+            if (typeof options.locale.days === 'string')
+                this.locale.days = options.locale.days;
 
             if (typeof options.locale.daysOfWeek === 'object')
                 this.locale.daysOfWeek = options.locale.daysOfWeek.slice();
@@ -244,8 +255,8 @@
         if (typeof options.showCustomRangeLabel === 'boolean')
             this.showCustomRangeLabel = options.showCustomRangeLabel;
 
-        if (typeof options.doubleCalendarDesktop === 'boolean')
-            this.doubleCalendarDesktop = options.doubleCalendarDesktop;
+        if (typeof options.showDays === 'boolean')
+            this.showDays = options.showDays;
 
         if (typeof options.singleDatePicker === 'boolean') {
             this.singleDatePicker = options.singleDatePicker;
@@ -390,16 +401,10 @@
             this.container.addClass('show-ranges');
 
         if (this.singleDatePicker || this.singleCalendar) {
-            if(this.doubleCalendarDesktop) {
-                if($(window).width() < 768) {
-                    this.container.addClass('single');
-                    this.container.find('.drp-calendar.left').addClass('single');
-                    this.container.find('.drp-calendar.right').hide();
-                } else {
-                    this.container.find('.drp-calendar.right').show();
-                }
-            }
+            this.container.addClass('single');
+            this.container.find('.drp-calendar.left').addClass('single');
             this.container.find('.drp-calendar.left').show();
+            this.container.find('.drp-calendar.right').hide();
             if (!this.timePicker) {
                 this.container.addClass('auto-apply');
             }
@@ -748,8 +753,7 @@
             }
 
             html += '<th colspan="5" class="month">' + dateHtml + '</th>';
-            var showNext = (this.doubleCalendarDesktop && side === 'left') ? (($(window).width() < 768) ? true : false) : true;
-            if ((!maxDate || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker || this.singleCalendar) && showNext) {
+            if ((!maxDate || maxDate.isAfter(calendar.lastDay)) && (!this.linkedCalendars || side == 'right' || this.singleDatePicker || this.singleCalendar)) {
                 html += '<th class="next available"><span></span></th>';
             } else {
                 html += '<th></th>';
@@ -1108,14 +1112,16 @@
             $(window).on('resize.daterangepicker', $.proxy(function(e) { this.move(e); }, this));
 
             this.oldStartDate = this.startDate.clone();
-            this.oldEndDate = (this.endDate == null ? null : this.endDate.clone());
-            this.previousRightTime = (this.endDate == null ? null : this.endDate.clone());
+            this.oldEndDate = this.endDate.clone();
+            this.previousRightTime = this.endDate.clone();
 
             this.updateView();
             this.container.show();
             this.move();
             this.element.trigger('show.daterangepicker', this);
             this.isShowing = true;
+
+            this.updateDays(this.startDate, this.endDate);
         },
 
         hide: function(e) {
@@ -1123,12 +1129,12 @@
 
             //incomplete date selection, revert to last values
             if (!this.endDate) {
-                //this.startDate = this.oldStartDate.clone();
-                this.endDate = null;
+                this.startDate = this.oldStartDate.clone();
+                this.endDate = this.oldEndDate.clone();
             }
 
             //if a new date range was selected, invoke the user callback function
-            if (this.oldEndDate != null && this.endDate != null && (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate)))
+            if (!this.startDate.isSame(this.oldStartDate) || !this.endDate.isSame(this.oldEndDate))
                 this.callback(this.startDate.clone(), this.endDate.clone(), this.chosenLabel);
 
             //if picker is attached to a text input, update it
@@ -1229,7 +1235,10 @@
             var row = title.substr(1, 1);
             var col = title.substr(3, 1);
             var cal = $(e.target).parents('.drp-calendar');
+
             var date = cal.hasClass('left') ? this.leftCalendar.calendar[row][col] : this.rightCalendar.calendar[row][col];
+
+            var updateDays = $.proxy(this.updateDays, this);
 
             //highlight the dates between the start date and the date being hovered as a potential end date
             var leftCalendar = this.leftCalendar;
@@ -1249,6 +1258,8 @@
 
                     if ((dt.isAfter(startDate) && dt.isBefore(date)) || dt.isSame(date, 'day')) {
                         $(el).addClass('in-range');
+
+                        updateDays(startDate, date);
                     } else {
                         $(el).removeClass('in-range');
                     }
@@ -1256,6 +1267,29 @@
                 });
             }
 
+        },
+
+        updateDays: function(startDate, endDate) {
+            if (!this.showDays || startDate === null) {
+                return;
+            }
+
+            var footer = this.container.find('.drp-footer');
+            var footerFrom = footer.find('.from');
+            var footerTo = footer.find('.to');
+            var footerDays = footer.find('.days');
+
+            footerFrom.html(this.locale.daysOfWeek[startDate.isoWeekday() - 1] + ', ' + startDate.format('D') + ' ' + this.locale.monthNames[startDate.month() - 1]);
+
+            if (endDate !== null && endDate.isAfter(startDate) && !endDate.isSame(startDate, 'day')) {
+                footerTo.html(' - ' + this.locale.daysOfWeek[endDate.isoWeekday() - 1] + ', ' + endDate.format('D') + ' ' + this.locale.monthNames[endDate.month() - 1]);;
+
+                var days = endDate.diff(startDate, 'days');
+                footerDays.html(' (' + days + ' ' + (days > 1 ? this.locale.days : this.locale.day) + ')');
+            } else {
+                footerTo.html('');
+                footerDays.html('');
+            }
         },
 
         clickDate: function(e) {

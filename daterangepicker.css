@@ -263,6 +263,12 @@
   cursor: not-allowed;
 }
 
+.daterangepicker .drp-footer {
+  clear: both;
+  text-align: center;
+  padding: .5rem;
+}
+
 .daterangepicker .drp-buttons {
   clear: both;
   text-align: right;

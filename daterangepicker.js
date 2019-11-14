@@ -1279,10 +1279,10 @@
             var footerTo = footer.find('.to');
             var footerDays = footer.find('.days');
 
-            footerFrom.html(this.locale.daysOfWeek[startDate.isoWeekday() - 1] + ', ' + startDate.format('D') + ' ' + this.locale.monthNames[startDate.month() - 1]);
+            footerFrom.html(this.locale.daysOfWeek[startDate.isoWeekday() - 1] + ', ' + startDate.format('D') + ' ' + this.locale.monthNames[startDate.month()]);
 
             if (endDate !== null && endDate.isAfter(startDate) && !endDate.isSame(startDate, 'day')) {
-                footerTo.html(' - ' + this.locale.daysOfWeek[endDate.isoWeekday() - 1] + ', ' + endDate.format('D') + ' ' + this.locale.monthNames[endDate.month() - 1]);;
+                footerTo.html(' - ' + this.locale.daysOfWeek[endDate.isoWeekday() - 1] + ', ' + endDate.format('D') + ' ' + this.locale.monthNames[endDate.month()]);;
 
                 var days = endDate.diff(startDate, 'days');
                 footerDays.html(' (' + days + ' ' + (days > 1 ? this.locale.days : this.locale.day) + ')');
